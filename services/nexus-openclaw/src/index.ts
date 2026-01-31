@@ -138,7 +138,7 @@ class OpenClawServer {
     this.database = new Pool({
       host: process.env.POSTGRES_HOST || 'nexus-postgres.nexus.svc.cluster.local',
       port: parseInt(process.env.POSTGRES_PORT || '5432', 10),
-      database: process.env.POSTGRES_DATABASE || 'unified_nexus',
+      database: process.env.POSTGRES_DATABASE || 'nexus',
       user: process.env.POSTGRES_USER || 'nexus',
       password: process.env.POSTGRES_PASSWORD || '',
       max: 20,
