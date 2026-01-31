@@ -263,8 +263,8 @@ class OpenClawServer {
   private mountRoutes(): void {
     const apiRouter = express.Router();
 
-    // Health check routes (no authentication required)
-    this.app.get('/health', (req: Request, res: Response) => {
+    // Health check handler
+    const healthHandler = (req: Request, res: Response) => {
       res.status(200).json({
         status: 'healthy',
         plugin: PLUGIN_ID,
@@ -272,9 +272,10 @@ class OpenClawServer {
         buildId: BUILD_ID,
         timestamp: new Date().toISOString()
       });
-    });
+    };
 
-    this.app.get('/ready', async (req: Request, res: Response) => {
+    // Readiness check handler
+    const readyHandler = async (req: Request, res: Response) => {
       try {
         // Check database connectivity
         if (this.database) {
@@ -303,20 +304,32 @@ class OpenClawServer {
           error: error instanceof Error ? error.message : 'Unknown error'
         });
       }
-    });
+    };
 
-    this.app.get('/live', (req: Request, res: Response) => {
+    // Liveness check handler
+    const liveHandler = (req: Request, res: Response) => {
       if (this.isShuttingDown) {
         res.status(503).json({ status: 'shutting_down' });
       } else {
         res.status(200).json({ status: 'alive' });
       }
-    });
+    };
 
-    // Prometheus metrics endpoint
-    this.app.get('/metrics', async (req: Request, res: Response) => {
+    // Metrics handler
+    const metricsHandler = async (req: Request, res: Response) => {
       res.set('Content-Type', metricsRegister.contentType);
       res.end(await metricsRegister.metrics());
+    };
+
+    // Health check routes - both prefixed (for Istio) and unprefixed (for K8s probes)
+    this.app.get('/health', healthHandler);
+    this.app.get('/openclaw/health', healthHandler);
+    this.app.get('/ready', readyHandler);
+    this.app.get('/openclaw/ready', readyHandler);
+    this.app.get('/live', liveHandler);
+    this.app.get('/openclaw/live', liveHandler);
+    this.app.get('/metrics', metricsHandler);
+    this.app.get('/openclaw/metrics', metricsHandler);
     });
 
     // Authenticated API routes - use requireAuth middleware with auth client
