@@ -70,8 +70,8 @@ COPY services/nexus-openclaw/src ./src
 COPY services/nexus-openclaw/tsconfig.json ./
 COPY services/nexus-openclaw/tsconfig.simple.json ./
 
-# Build TypeScript to JavaScript
-RUN npm run build
+# Build full TypeScript to JavaScript (includes all channel adapters and gateway)
+RUN npm run build:full
 
 # Remove devDependencies, keep only production dependencies
 RUN npm prune --production
@@ -158,8 +158,8 @@ EXPOSE 8080
 # Use dumb-init to handle signals properly
 ENTRYPOINT ["/usr/bin/dumb-init", "--"]
 
-# Start the application (simple backend - full backend requires fixing TS errors)
-CMD ["node", "dist/index-simple.js"]
+# Start the full application with WebSocket gateway and channel adapters
+CMD ["node", "dist/index.js"]
 
 # ============================================================================
 # Build Instructions (ALWAYS build on remote server):
