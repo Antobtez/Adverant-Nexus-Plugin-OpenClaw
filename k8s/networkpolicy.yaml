@@ -1,0 +1,184 @@
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: nexus-openclaw-policy
+  namespace: nexus
+  labels:
+    app: nexus-openclaw
+    component: plugin
+spec:
+  podSelector:
+    matchLabels:
+      app: nexus-openclaw
+  policyTypes:
+  - Ingress
+  - Egress
+
+  # Ingress rules - who can connect to OpenClaw
+  ingress:
+  # Allow traffic from Istio ingress gateway
+  - from:
+    - namespaceSelector:
+        matchLabels:
+          kubernetes.io/metadata.name: istio-system
+      podSelector:
+        matchLabels:
+          app: istio-ingressgateway
+    ports:
+    - protocol: TCP
+      port: 8080
+
+  # Allow traffic from other Nexus services in same namespace
+  - from:
+    - podSelector: {}
+    ports:
+    - protocol: TCP
+      port: 8080
+
+  # Allow Prometheus scraping from observability namespace
+  - from:
+    - namespaceSelector:
+        matchLabels:
+          kubernetes.io/metadata.name: observability
+      podSelector:
+        matchLabels:
+          app: prometheus
+    ports:
+    - protocol: TCP
+      port: 8080
+
+  # Egress rules - what OpenClaw can connect to
+  egress:
+  # Allow DNS resolution
+  - to:
+    - namespaceSelector:
+        matchLabels:
+          kubernetes.io/metadata.name: kube-system
+      podSelector:
+        matchLabels:
+          k8s-app: kube-dns
+    ports:
+    - protocol: UDP
+      port: 53
+
+  # Allow connection to PostgreSQL in nexus-data namespace
+  - to:
+    - namespaceSelector:
+        matchLabels:
+          kubernetes.io/metadata.name: nexus-data
+      podSelector:
+        matchLabels:
+          app: postgres
+    ports:
+    - protocol: TCP
+      port: 5432
+
+  # Allow connection to Redis in nexus-data namespace
+  - to:
+    - namespaceSelector:
+        matchLabels:
+          kubernetes.io/metadata.name: nexus-data
+      podSelector:
+        matchLabels:
+          app: redis
+    ports:
+    - protocol: TCP
+      port: 6379
+
+  # Allow connection to GraphRAG Enhanced
+  - to:
+    - podSelector:
+        matchLabels:
+          app: nexus-graphrag-enhanced
+    ports:
+    - protocol: TCP
+      port: 9051  # HTTP
+    - protocol: TCP
+      port: 9052  # WebSocket
+
+  # Allow connection to regular GraphRAG (fallback)
+  - to:
+    - podSelector:
+        matchLabels:
+          app: graphrag
+    ports:
+    - protocol: TCP
+      port: 8090  # HTTP
+    - protocol: TCP
+      port: 8091  # WebSocket
+
+  # Allow connection to MageAgent
+  - to:
+    - podSelector:
+        matchLabels:
+          app: mageagent
+    ports:
+    - protocol: TCP
+      port: 8080  # HTTP
+    - protocol: TCP
+      port: 8081  # WebSocket
+
+  # Allow connection to FileProcess Worker
+  - to:
+    - podSelector:
+        matchLabels:
+          app: nexus-fileprocess-worker
+    ports:
+    - protocol: TCP
+      port: 8080
+
+  # Allow connection to Auth service
+  - to:
+    - podSelector:
+        matchLabels:
+          app: nexus-auth
+    ports:
+    - protocol: TCP
+      port: 8080
+
+  # Allow connection to API Gateway
+  - to:
+    - podSelector:
+        matchLabels:
+          app: nexus-gateway
+    ports:
+    - protocol: TCP
+      port: 8080
+
+  # Allow HTTPS egress to external APIs (OpenRouter, Anthropic, etc.)
+  - to:
+    - ipBlock:
+        cidr: 0.0.0.0/0
+        except:
+        # Block private IP ranges
+        - 10.0.0.0/8
+        - 172.16.0.0/12
+        - 192.168.0.0/16
+        - 169.254.0.0/16  # Link-local
+        - 127.0.0.0/8     # Loopback
+    ports:
+    - protocol: TCP
+      port: 443  # HTTPS
+
+  # Allow HTTP egress to external webhooks (for channel integrations)
+  - to:
+    - ipBlock:
+        cidr: 0.0.0.0/0
+        except:
+        - 10.0.0.0/8
+        - 172.16.0.0/12
+        - 192.168.0.0/16
+        - 169.254.0.0/16
+        - 127.0.0.0/8
+    ports:
+    - protocol: TCP
+      port: 80   # HTTP (for some webhook services)
+
+  # Allow inter-pod communication within OpenClaw deployment
+  - to:
+    - podSelector:
+        matchLabels:
+          app: nexus-openclaw
+    ports:
+    - protocol: TCP
+      port: 8080

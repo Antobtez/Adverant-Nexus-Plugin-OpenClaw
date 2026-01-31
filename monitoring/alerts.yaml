@@ -1,0 +1,365 @@
+# OpenClaw Plugin - Prometheus Alert Rules
+#
+# This file defines alert rules for monitoring the OpenClaw plugin.
+# Alerts are triggered based on defined thresholds and durations.
+
+groups:
+  - name: openclaw_http_alerts
+    interval: 30s
+    rules:
+      - alert: HighHTTPErrorRate
+        expr: |
+          (
+            sum(rate(http_request_errors_total{service="nexus-openclaw"}[5m]))
+            /
+            sum(rate(http_requests_total{service="nexus-openclaw"}[5m]))
+          ) > 0.05
+        for: 5m
+        labels:
+          severity: warning
+          component: http
+        annotations:
+          summary: "High HTTP error rate detected"
+          description: "HTTP error rate is {{ $value | humanizePercentage }} (threshold: 5%)"
+
+      - alert: CriticalHTTPErrorRate
+        expr: |
+          (
+            sum(rate(http_request_errors_total{service="nexus-openclaw"}[5m]))
+            /
+            sum(rate(http_requests_total{service="nexus-openclaw"}[5m]))
+          ) > 0.10
+        for: 2m
+        labels:
+          severity: critical
+          component: http
+        annotations:
+          summary: "Critical HTTP error rate detected"
+          description: "HTTP error rate is {{ $value | humanizePercentage }} (threshold: 10%)"
+
+      - alert: HighHTTPLatency
+        expr: |
+          histogram_quantile(0.95,
+            rate(http_request_duration_seconds_bucket{service="nexus-openclaw"}[5m])
+          ) > 1
+        for: 5m
+        labels:
+          severity: warning
+          component: http
+        annotations:
+          summary: "High HTTP latency detected"
+          description: "P95 HTTP latency is {{ $value | humanizeDuration }} (threshold: 1s)"
+
+      - alert: CriticalHTTPLatency
+        expr: |
+          histogram_quantile(0.95,
+            rate(http_request_duration_seconds_bucket{service="nexus-openclaw"}[5m])
+          ) > 5
+        for: 2m
+        labels:
+          severity: critical
+          component: http
+        annotations:
+          summary: "Critical HTTP latency detected"
+          description: "P95 HTTP latency is {{ $value | humanizeDuration }} (threshold: 5s)"
+
+  - name: openclaw_skill_alerts
+    interval: 30s
+    rules:
+      - alert: LowSkillSuccessRate
+        expr: |
+          (
+            sum(rate(skill_executions_total{service="nexus-openclaw",status="success"}[5m]))
+            /
+            sum(rate(skill_executions_total{service="nexus-openclaw"}[5m]))
+          ) < 0.90
+        for: 5m
+        labels:
+          severity: warning
+          component: skills
+        annotations:
+          summary: "Low skill execution success rate"
+          description: "Skill success rate is {{ $value | humanizePercentage }} (threshold: 90%)"
+
+      - alert: CriticalSkillSuccessRate
+        expr: |
+          (
+            sum(rate(skill_executions_total{service="nexus-openclaw",status="success"}[5m]))
+            /
+            sum(rate(skill_executions_total{service="nexus-openclaw"}[5m]))
+          ) < 0.70
+        for: 2m
+        labels:
+          severity: critical
+          component: skills
+        annotations:
+          summary: "Critical skill execution success rate"
+          description: "Skill success rate is {{ $value | humanizePercentage }} (threshold: 70%)"
+
+      - alert: HighSkillExecutionLatency
+        expr: |
+          histogram_quantile(0.95,
+            rate(skill_execution_duration_seconds_bucket{service="nexus-openclaw"}[5m])
+          ) > 30
+        for: 5m
+        labels:
+          severity: warning
+          component: skills
+        annotations:
+          summary: "High skill execution latency"
+          description: "P95 skill execution latency is {{ $value | humanizeDuration }} (threshold: 30s)"
+
+  - name: openclaw_database_alerts
+    interval: 30s
+    rules:
+      - alert: HighDatabaseLatency
+        expr: |
+          histogram_quantile(0.95,
+            rate(database_query_duration_seconds_bucket{service="nexus-openclaw"}[5m])
+          ) > 0.5
+        for: 5m
+        labels:
+          severity: warning
+          component: database
+        annotations:
+          summary: "High database query latency"
+          description: "P95 database query latency is {{ $value | humanizeDuration }} (threshold: 500ms)"
+
+      - alert: HighDatabaseErrorRate
+        expr: |
+          rate(database_errors_total{service="nexus-openclaw"}[5m]) > 0.1
+        for: 5m
+        labels:
+          severity: warning
+          component: database
+        annotations:
+          summary: "High database error rate"
+          description: "Database error rate is {{ $value }} errors/sec (threshold: 0.1/sec)"
+
+      - alert: DatabaseConnectionPoolExhausted
+        expr: |
+          database_connections_active{service="nexus-openclaw",pool="postgres"} > 18
+        for: 5m
+        labels:
+          severity: warning
+          component: database
+        annotations:
+          summary: "Database connection pool nearly exhausted"
+          description: "Active connections: {{ $value }} (pool size: 20)"
+
+  - name: openclaw_redis_alerts
+    interval: 30s
+    rules:
+      - alert: HighRedisLatency
+        expr: |
+          histogram_quantile(0.95,
+            rate(redis_command_duration_seconds_bucket{service="nexus-openclaw"}[5m])
+          ) > 0.1
+        for: 5m
+        labels:
+          severity: warning
+          component: redis
+        annotations:
+          summary: "High Redis command latency"
+          description: "P95 Redis latency is {{ $value | humanizeDuration }} (threshold: 100ms)"
+
+      - alert: HighRedisErrorRate
+        expr: |
+          rate(redis_errors_total{service="nexus-openclaw"}[5m]) > 0.1
+        for: 5m
+        labels:
+          severity: warning
+          component: redis
+        annotations:
+          summary: "High Redis error rate"
+          description: "Redis error rate is {{ $value }} errors/sec (threshold: 0.1/sec)"
+
+  - name: openclaw_resource_alerts
+    interval: 30s
+    rules:
+      - alert: HighCPUUsage
+        expr: |
+          rate(process_cpu_seconds_total{service="nexus-openclaw"}[5m]) > 0.8
+        for: 10m
+        labels:
+          severity: warning
+          component: resources
+        annotations:
+          summary: "High CPU usage detected"
+          description: "CPU usage is {{ $value | humanize }} cores (threshold: 0.8 cores)"
+
+      - alert: HighMemoryUsage
+        expr: |
+          process_resident_memory_bytes{service="nexus-openclaw"} > 1073741824
+        for: 10m
+        labels:
+          severity: warning
+          component: resources
+        annotations:
+          summary: "High memory usage detected"
+          description: "Memory usage is {{ $value | humanize1024 }} (threshold: 1GB)"
+
+      - alert: CriticalMemoryUsage
+        expr: |
+          process_resident_memory_bytes{service="nexus-openclaw"} > 2147483648
+        for: 5m
+        labels:
+          severity: critical
+          component: resources
+        annotations:
+          summary: "Critical memory usage detected"
+          description: "Memory usage is {{ $value | humanize1024 }} (threshold: 2GB)"
+
+  - name: openclaw_pod_alerts
+    interval: 30s
+    rules:
+      - alert: PodRestartLoop
+        expr: |
+          rate(kube_pod_container_status_restarts_total{pod=~"nexus-openclaw.*"}[15m]) > 0
+        for: 10m
+        labels:
+          severity: warning
+          component: kubernetes
+        annotations:
+          summary: "Pod is in restart loop"
+          description: "Pod {{ $labels.pod }} has restarted {{ $value }} times in 15m"
+
+      - alert: PodNotReady
+        expr: |
+          kube_pod_status_ready{pod=~"nexus-openclaw.*",condition="true"} == 0
+        for: 5m
+        labels:
+          severity: critical
+          component: kubernetes
+        annotations:
+          summary: "Pod is not ready"
+          description: "Pod {{ $labels.pod }} has been not ready for 5 minutes"
+
+      - alert: PodPending
+        expr: |
+          kube_pod_status_phase{pod=~"nexus-openclaw.*",phase="Pending"} == 1
+        for: 5m
+        labels:
+          severity: warning
+          component: kubernetes
+        annotations:
+          summary: "Pod stuck in pending state"
+          description: "Pod {{ $labels.pod }} has been pending for 5 minutes"
+
+  - name: openclaw_quota_alerts
+    interval: 30s
+    rules:
+      - alert: QuotaNearLimit
+        expr: |
+          (quota_usage{service="nexus-openclaw"} / quota_limit{service="nexus-openclaw"}) > 0.8
+        for: 5m
+        labels:
+          severity: warning
+          component: quotas
+        annotations:
+          summary: "Organization near quota limit"
+          description: "Org {{ $labels.organization_id }} at {{ $value | humanizePercentage }} of {{ $labels.quota_type }} quota"
+
+      - alert: QuotaExceeded
+        expr: |
+          rate(quota_exceeded_total{service="nexus-openclaw"}[5m]) > 0
+        for: 2m
+        labels:
+          severity: critical
+          component: quotas
+        annotations:
+          summary: "Quota exceeded events detected"
+          description: "Org {{ $labels.organization_id }} exceeding {{ $labels.quota_type }} quota"
+
+  - name: openclaw_rate_limit_alerts
+    interval: 30s
+    rules:
+      - alert: HighRateLimitHits
+        expr: |
+          rate(rate_limit_hits_total{service="nexus-openclaw"}[5m]) > 1
+        for: 5m
+        labels:
+          severity: warning
+          component: rate_limiting
+        annotations:
+          summary: "High rate limit hit rate"
+          description: "Org {{ $labels.organization_id }} hitting rate limits frequently"
+
+  - name: openclaw_websocket_alerts
+    interval: 30s
+    rules:
+      - alert: HighWebSocketConnectionCount
+        expr: |
+          websocket_connections_active{service="nexus-openclaw"} > 90
+        for: 5m
+        labels:
+          severity: warning
+          component: websocket
+        annotations:
+          summary: "High WebSocket connection count"
+          description: "{{ $value }} active WebSocket connections (threshold: 90)"
+
+      - alert: WebSocketMessageBacklog
+        expr: |
+          rate(websocket_messages_total{service="nexus-openclaw",direction="received"}[5m])
+          >
+          rate(websocket_messages_total{service="nexus-openclaw",direction="sent"}[5m]) * 2
+        for: 5m
+        labels:
+          severity: warning
+          component: websocket
+        annotations:
+          summary: "WebSocket message processing backlog detected"
+          description: "Messages are being received faster than processed"
+
+  - name: openclaw_external_service_alerts
+    interval: 30s
+    rules:
+      - alert: HighExternalServiceErrorRate
+        expr: |
+          rate(external_service_errors_total{service="nexus-openclaw"}[5m]) > 0.1
+        for: 5m
+        labels:
+          severity: warning
+          component: external_services
+        annotations:
+          summary: "High external service error rate"
+          description: "Service {{ $labels.service }} error rate: {{ $value }} errors/sec"
+
+      - alert: HighExternalServiceLatency
+        expr: |
+          histogram_quantile(0.95,
+            rate(external_service_duration_seconds_bucket{service="nexus-openclaw"}[5m])
+          ) > 10
+        for: 5m
+        labels:
+          severity: warning
+          component: external_services
+        annotations:
+          summary: "High external service latency"
+          description: "Service {{ $labels.service }} P95 latency: {{ $value | humanizeDuration }}"
+
+  - name: openclaw_session_alerts
+    interval: 30s
+    rules:
+      - alert: HighActiveSessionCount
+        expr: |
+          sum(sessions_active{service="nexus-openclaw"}) > 1000
+        for: 10m
+        labels:
+          severity: warning
+          component: sessions
+        annotations:
+          summary: "High active session count"
+          description: "{{ $value }} active sessions (threshold: 1000)"
+
+      - alert: SessionCreationSpike
+        expr: |
+          rate(sessions_total{service="nexus-openclaw"}[5m]) > 10
+        for: 5m
+        labels:
+          severity: warning
+          component: sessions
+        annotations:
+          summary: "Session creation spike detected"
+          description: "Session creation rate: {{ $value }} sessions/sec (threshold: 10/sec)"

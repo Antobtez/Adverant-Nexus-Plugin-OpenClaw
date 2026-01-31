@@ -1,0 +1,44 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+namespace: nexus
+
+resources:
+- serviceaccount.yaml
+- networkpolicy.yaml
+- deployment.yaml
+- destinationrule.yaml
+- virtualservice.yaml
+
+# Common labels applied to all resources
+commonLabels:
+  app.kubernetes.io/name: openclaw
+  app.kubernetes.io/instance: nexus-openclaw
+  app.kubernetes.io/component: plugin
+  app.kubernetes.io/part-of: nexus
+  app.kubernetes.io/managed-by: kustomize
+
+# Common annotations
+commonAnnotations:
+  adverant.ai/plugin-id: nexus-openclaw
+  adverant.ai/plugin-version: "1.0.0"
+  adverant.ai/execution-mode: hardened_docker
+
+# Image configuration
+images:
+- name: localhost:5000/nexus-openclaw
+  newTag: latest
+
+# ConfigMap generator (optional - for non-sensitive config)
+configMapGenerator:
+- name: openclaw-config
+  literals:
+  - PLUGIN_ID=nexus-openclaw
+  - PLUGIN_VERSION=1.0.0
+  - LOG_FORMAT=json
+  - CORS_ENABLED=true
+
+# Replica count (can be overridden by HPA)
+replicas:
+- name: nexus-openclaw
+  count: 2

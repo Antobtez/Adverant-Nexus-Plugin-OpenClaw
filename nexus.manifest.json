@@ -1,0 +1,600 @@
+{
+  "$schema": "https://api.adverant.ai/schemas/plugin-manifest.json",
+  "manifestVersion": "1.0.0",
+
+  "id": "nexus-openclaw",
+  "name": "OpenClaw Assistant",
+  "version": "1.0.0",
+  "description": "Multi-channel AI assistant with 100+ skills, autonomous automation, and Nexus integration",
+  "author": {
+    "name": "Adverant AI",
+    "email": "plugins@adverant.ai",
+    "url": "https://adverant.ai"
+  },
+
+  "category": "productivity",
+  "tags": ["ai-assistant", "automation", "multi-channel", "nexus-integration", "chatbot", "workflow"],
+  "visibility": "public",
+  "status": "beta",
+  "executionMode": "hardened_docker",
+
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/adverant/Adverant-Nexus-Plugin-OpenClaw"
+  },
+
+  "documentation": {
+    "homepage": "https://adverant.ai/products/plugins/openclaw",
+    "docs": "https://docs.adverant.ai/plugins/openclaw",
+    "quickstart": "https://docs.adverant.ai/plugins/openclaw/quickstart",
+    "api": "https://docs.adverant.ai/plugins/openclaw/api"
+  },
+
+  "support": {
+    "email": "openclaw-support@adverant.ai",
+    "slack": "https://adverant.slack.com/channels/openclaw-support",
+    "issues": "https://github.com/adverant/Adverant-Nexus-Plugin-OpenClaw/issues"
+  },
+
+  "entrypoint": {
+    "type": "http",
+    "port": 8080,
+    "protocol": "http",
+    "healthCheck": {
+      "path": "/health",
+      "initialDelaySeconds": 5,
+      "periodSeconds": 10,
+      "timeoutSeconds": 5,
+      "failureThreshold": 3
+    },
+    "readinessCheck": {
+      "path": "/ready",
+      "initialDelaySeconds": 10,
+      "periodSeconds": 10,
+      "timeoutSeconds": 5
+    },
+    "livenessCheck": {
+      "path": "/live",
+      "initialDelaySeconds": 30,
+      "periodSeconds": 30,
+      "timeoutSeconds": 5
+    }
+  },
+
+  "api": {
+    "version": "v1",
+    "basePath": "/openclaw/api/v1",
+    "documentation": "/openclaw/api/docs",
+    "openapi": "/openclaw/api/openapi.json",
+    "endpoints": [
+      {
+        "path": "/sessions",
+        "methods": ["GET", "POST", "DELETE"],
+        "description": "Manage chat sessions"
+      },
+      {
+        "path": "/skills",
+        "methods": ["GET", "POST"],
+        "description": "Browse and execute skills"
+      },
+      {
+        "path": "/channels",
+        "methods": ["GET", "POST", "PUT", "DELETE"],
+        "description": "Configure messaging channels"
+      },
+      {
+        "path": "/cron",
+        "methods": ["GET", "POST", "PUT", "DELETE"],
+        "description": "Manage cron jobs"
+      },
+      {
+        "path": "/analytics",
+        "methods": ["GET"],
+        "description": "Usage analytics and metrics"
+      }
+    ]
+  },
+
+  "ui": {
+    "enabled": true,
+    "path": "/openclaw/ui",
+    "framework": "next",
+    "version": "14.2.0",
+    "standalone": true,
+    "buildCommand": "npm run build",
+    "startCommand": "npm run start",
+    "components": [
+      {
+        "name": "chat-interface",
+        "type": "panel",
+        "description": "WhatsApp-style chat interface with real-time messaging",
+        "features": ["websocket", "file-upload", "message-history", "typing-indicators"]
+      },
+      {
+        "name": "skill-browser",
+        "type": "tab",
+        "description": "Browse and search 100+ available skills",
+        "features": ["search", "categorization", "favorites", "skill-execution"]
+      },
+      {
+        "name": "channel-manager",
+        "type": "tab",
+        "description": "Multi-channel configuration and status",
+        "features": ["qr-code-pairing", "oauth-flow", "channel-status", "webhook-config"]
+      },
+      {
+        "name": "cron-editor",
+        "type": "tab",
+        "description": "Visual cron job editor and scheduler",
+        "features": ["cron-builder", "job-history", "timezone-support", "execution-logs"]
+      },
+      {
+        "name": "analytics",
+        "type": "tab",
+        "description": "Usage analytics and performance metrics",
+        "features": ["charts", "skill-usage", "channel-breakdown", "session-trends"]
+      },
+      {
+        "name": "settings",
+        "type": "tab",
+        "description": "Plugin configuration and preferences",
+        "features": ["model-selection", "quota-display", "api-keys", "session-timeout"]
+      }
+    ]
+  },
+
+  "skills": {
+    "master": "openclaw-master",
+    "triggers": ["/openclaw", "/assistant", "/automate"],
+    "totalCount": 100,
+    "categories": {
+      "nexus-integration": {
+        "count": 20,
+        "skills": [
+          "nexus-graphrag-search",
+          "nexus-graphrag-store",
+          "nexus-mageagent-task",
+          "nexus-fileprocess-upload",
+          "nexus-fileprocess-extract",
+          "nexus-github-pr-review",
+          "nexus-github-commit",
+          "nexus-github-issues",
+          "nexus-communication-email",
+          "nexus-communication-slack",
+          "nexus-communication-teams",
+          "nexus-calendar-event",
+          "nexus-calendar-sync",
+          "nexus-analytics-query",
+          "nexus-billing-invoice",
+          "nexus-crm-ticket",
+          "nexus-law-analyze",
+          "nexus-video-transcribe",
+          "nexus-browser-scrape",
+          "nexus-cyberagent-scan",
+          "nexus-terminal-exec"
+        ]
+      },
+      "communication": {
+        "count": 15,
+        "description": "Email, messaging, notifications"
+      },
+      "automation": {
+        "count": 12,
+        "description": "Workflow automation and scheduling"
+      },
+      "data-processing": {
+        "count": 10,
+        "description": "ETL, transformations, analysis"
+      },
+      "web-services": {
+        "count": 8,
+        "description": "API integrations and web scraping"
+      },
+      "utilities": {
+        "count": 35,
+        "description": "File operations, text processing, etc."
+      }
+    }
+  },
+
+  "channels": {
+    "supported": [
+      {
+        "type": "whatsapp",
+        "library": "baileys",
+        "authentication": "qr-code",
+        "features": ["text", "images", "documents", "audio", "video", "location"],
+        "rateLimit": "1000 messages/day (open_source tier)"
+      },
+      {
+        "type": "telegram",
+        "library": "grammy",
+        "authentication": "bot_token",
+        "features": ["text", "images", "documents", "audio", "video", "inline-keyboards"],
+        "rateLimit": "30 messages/second"
+      },
+      {
+        "type": "discord",
+        "library": "discord.js",
+        "authentication": "bot_token",
+        "features": ["text", "embeds", "reactions", "slash-commands"],
+        "rateLimit": "50 messages/second"
+      },
+      {
+        "type": "slack",
+        "library": "bolt",
+        "authentication": "oauth",
+        "features": ["text", "blocks", "interactive-components", "modals"],
+        "rateLimit": "1 message/second per channel"
+      },
+      {
+        "type": "web",
+        "library": "socket.io",
+        "authentication": "jwt",
+        "features": ["text", "images", "documents", "real-time", "typing-indicators"],
+        "rateLimit": "unlimited"
+      }
+    ]
+  },
+
+  "dependencies": {
+    "nexus": {
+      "services": [
+        {
+          "name": "nexus-graphrag",
+          "version": ">=1.0.0",
+          "required": true,
+          "purpose": "Knowledge graph search and semantic memory"
+        },
+        {
+          "name": "nexus-mageagent",
+          "version": ">=1.0.0",
+          "required": true,
+          "purpose": "Multi-agent orchestration and task execution"
+        },
+        {
+          "name": "nexus-fileprocess",
+          "version": ">=1.0.0",
+          "required": false,
+          "purpose": "Document processing and extraction"
+        },
+        {
+          "name": "nexus-skills-engine",
+          "version": ">=1.0.0",
+          "required": true,
+          "purpose": "Skill registry and execution framework"
+        },
+        {
+          "name": "nexus-auth",
+          "version": ">=1.0.0",
+          "required": true,
+          "purpose": "JWT validation and user authentication"
+        }
+      ],
+      "databases": [
+        {
+          "type": "postgresql",
+          "version": ">=14.0",
+          "required": true,
+          "schema": "openclaw",
+          "tables": ["sessions", "skill_executions", "cron_jobs", "message_channels"]
+        },
+        {
+          "type": "redis",
+          "version": ">=7.0",
+          "required": true,
+          "purpose": "WebSocket adapter, session cache, rate limiting"
+        }
+      ]
+    },
+    "external": {
+      "apis": [
+        {
+          "name": "openrouter",
+          "required": true,
+          "purpose": "LLM API for Claude, GPT, and other models",
+          "apiKeyEnv": "OPENROUTER_API_KEY"
+        },
+        {
+          "name": "anthropic",
+          "required": true,
+          "purpose": "Direct Claude API access",
+          "apiKeyEnv": "ANTHROPIC_API_KEY"
+        }
+      ]
+    },
+    "runtime": {
+      "node": ">=20.0.0",
+      "npm": ">=10.0.0"
+    }
+  },
+
+  "resources": {
+    "requests": {
+      "cpu": "1000m",
+      "memory": "2Gi",
+      "storage": "10Gi"
+    },
+    "limits": {
+      "cpu": "4000m",
+      "memory": "8Gi",
+      "storage": "50Gi"
+    },
+    "scaling": {
+      "minReplicas": 2,
+      "maxReplicas": 5,
+      "targetCPUUtilization": 70,
+      "targetMemoryUtilization": 80
+    }
+  },
+
+  "quotas": {
+    "open_source": {
+      "max_sessions": 10,
+      "max_skills_per_minute": 10,
+      "max_channels": 2,
+      "max_cron_jobs": 5,
+      "max_message_history": 100,
+      "max_concurrent_skills": 3,
+      "max_storage_mb": 100,
+      "rate_limits": {
+        "api": "100 requests/minute",
+        "websocket": "50 messages/minute"
+      }
+    },
+    "teams": {
+      "max_sessions": 100,
+      "max_skills_per_minute": 60,
+      "max_channels": 5,
+      "max_cron_jobs": 50,
+      "max_message_history": 1000,
+      "max_concurrent_skills": 10,
+      "max_storage_mb": 1000,
+      "rate_limits": {
+        "api": "1000 requests/minute",
+        "websocket": "500 messages/minute"
+      }
+    },
+    "government": {
+      "max_sessions": -1,
+      "max_skills_per_minute": -1,
+      "max_channels": -1,
+      "max_cron_jobs": -1,
+      "max_message_history": -1,
+      "max_concurrent_skills": -1,
+      "max_storage_mb": -1,
+      "rate_limits": {
+        "api": "unlimited",
+        "websocket": "unlimited"
+      }
+    }
+  },
+
+  "pricing": {
+    "model": "freemium",
+    "tiers": [
+      {
+        "name": "Free",
+        "price_cents": 0,
+        "features": ["2 sessions", "5 skills/min", "1 channel", "2 cron jobs"],
+        "limits": "open_source tier quotas"
+      },
+      {
+        "name": "Pro",
+        "price_cents": 2900,
+        "period": "month",
+        "features": ["100 sessions", "60 skills/min", "5 channels", "50 cron jobs"],
+        "limits": "teams tier quotas"
+      },
+      {
+        "name": "Enterprise",
+        "price_cents": -1,
+        "contact": "sales@adverant.ai",
+        "features": ["Unlimited sessions", "Unlimited skills", "Unlimited channels", "Dedicated support"],
+        "limits": "government tier quotas"
+      }
+    ]
+  },
+
+  "websocket": {
+    "enabled": true,
+    "path": "/openclaw/ws",
+    "library": "socket.io",
+    "version": ">=4.0.0",
+    "adapter": "redis",
+    "events": [
+      "session.created",
+      "session.updated",
+      "session.deleted",
+      "skill.started",
+      "skill.progress",
+      "skill.completed",
+      "skill.error",
+      "message.received",
+      "message.sent",
+      "message.typing",
+      "cron.triggered",
+      "cron.completed",
+      "cron.failed",
+      "channel.connected",
+      "channel.disconnected",
+      "quota.warning",
+      "quota.exceeded"
+    ],
+    "authentication": "jwt",
+    "cors": {
+      "enabled": true,
+      "origins": ["*"],
+      "credentials": true
+    }
+  },
+
+  "security": {
+    "podSecurityStandard": "restricted",
+    "runAsNonRoot": true,
+    "runAsUser": 1001,
+    "fsGroup": 1001,
+    "readOnlyRootFilesystem": false,
+    "allowPrivilegeEscalation": false,
+    "capabilities": {
+      "drop": ["ALL"]
+    },
+    "seccompProfile": {
+      "type": "RuntimeDefault"
+    }
+  },
+
+  "networking": {
+    "istio": {
+      "enabled": true,
+      "gateway": "nexus-stack-gateway",
+      "virtualService": true,
+      "destinationRule": true
+    },
+    "ingress": {
+      "enabled": true,
+      "className": "istio",
+      "hosts": ["api.adverant.ai"],
+      "paths": [
+        "/openclaw/ui",
+        "/openclaw/api/v1",
+        "/openclaw/ws",
+        "/openclaw/health",
+        "/openclaw/ready",
+        "/openclaw/live",
+        "/openclaw/metrics"
+      ]
+    },
+    "networkPolicy": {
+      "enabled": true,
+      "policyTypes": ["Ingress", "Egress"],
+      "allowedIngress": ["istio-ingressgateway"],
+      "allowedEgress": ["nexus-graphrag", "nexus-mageagent", "nexus-fileprocess", "postgres", "redis", "external-apis"]
+    }
+  },
+
+  "observability": {
+    "metrics": {
+      "enabled": true,
+      "endpoint": "/metrics",
+      "format": "prometheus",
+      "port": 8080
+    },
+    "logging": {
+      "level": "info",
+      "format": "json",
+      "outputs": ["stdout", "loki"]
+    },
+    "tracing": {
+      "enabled": true,
+      "exporter": "otlp",
+      "endpoint": "http://jaeger-collector.observability.svc.cluster.local:4318",
+      "samplingRate": 0.1
+    }
+  },
+
+  "mcp": {
+    "enabled": true,
+    "version": "1.0.0",
+    "tools": [
+      {
+        "name": "openclaw_create_session",
+        "description": "Create new chat session",
+        "category": "session-management"
+      },
+      {
+        "name": "openclaw_execute_skill",
+        "description": "Execute OpenClaw skill",
+        "category": "skill-execution"
+      },
+      {
+        "name": "openclaw_create_cron",
+        "description": "Schedule automated task",
+        "category": "automation"
+      },
+      {
+        "name": "openclaw_list_skills",
+        "description": "List available skills",
+        "category": "discovery"
+      },
+      {
+        "name": "openclaw_configure_channel",
+        "description": "Configure messaging channel",
+        "category": "channel-management"
+      }
+    ]
+  },
+
+  "build": {
+    "docker": {
+      "file": "services/nexus-openclaw/Dockerfile",
+      "context": ".",
+      "target": "production",
+      "buildArgs": {
+        "NODE_VERSION": "20",
+        "BUILD_ID": "${BUILD_ID}",
+        "BUILD_TIMESTAMP": "${BUILD_TIMESTAMP}",
+        "GIT_COMMIT": "${GIT_COMMIT}",
+        "GIT_BRANCH": "${GIT_BRANCH}",
+        "VERSION": "${VERSION}"
+      },
+      "labels": {
+        "org.opencontainers.image.title": "OpenClaw Assistant",
+        "org.opencontainers.image.vendor": "Adverant AI",
+        "org.opencontainers.image.licenses": "MIT"
+      }
+    },
+    "registry": {
+      "host": "localhost:5000",
+      "repository": "nexus-openclaw",
+      "tags": ["latest", "${VERSION}", "${GIT_COMMIT}"]
+    }
+  },
+
+  "deployment": {
+    "namespace": "nexus",
+    "serviceAccount": "nexus-openclaw",
+    "strategy": {
+      "type": "RollingUpdate",
+      "maxSurge": 1,
+      "maxUnavailable": 0
+    },
+    "affinity": {
+      "podAntiAffinity": "preferred",
+      "nodeAffinity": {
+        "requiredDuringSchedulingIgnoredDuringExecution": {
+          "nodeSelectorTerms": [
+            {
+              "matchExpressions": [
+                {
+                  "key": "node-role.kubernetes.io/worker",
+                  "operator": "Exists"
+                }
+              ]
+            }
+          ]
+        }
+      }
+    }
+  },
+
+  "testing": {
+    "unit": "npm run test:unit",
+    "integration": "npm run test:integration",
+    "e2e": "npm run test:e2e",
+    "coverage": {
+      "minimum": 80,
+      "reportFormats": ["text", "lcov", "html"]
+    }
+  },
+
+  "ci": {
+    "pipeline": ".github/workflows/openclaw-ci.yml",
+    "stages": ["lint", "test", "build", "deploy"],
+    "triggers": {
+      "push": ["main", "develop"],
+      "pullRequest": ["main"]
+    }
+  }
+}

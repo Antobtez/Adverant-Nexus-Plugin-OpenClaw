@@ -1,0 +1,213 @@
+apiVersion: networking.istio.io/v1beta1
+kind: VirtualService
+metadata:
+  name: nexus-openclaw
+  namespace: nexus
+  labels:
+    app: nexus-openclaw
+    component: plugin
+    version: v1
+spec:
+  hosts:
+  - nexus-openclaw
+  - nexus-openclaw.nexus.svc.cluster.local
+  - api.adverant.ai
+  gateways:
+  - istio-system/nexus-stack-gateway
+  - mesh
+  http:
+  # WebSocket route (MUST BE FIRST) - Istio auto-handles WebSocket upgrade
+  - match:
+    - headers:
+        upgrade:
+          exact: websocket
+      uri:
+        prefix: /openclaw/ws
+    - headers:
+        upgrade:
+          exact: WebSocket
+      uri:
+        prefix: /openclaw/ws
+    route:
+    - destination:
+        host: nexus-openclaw.nexus.svc.cluster.local
+        port:
+          number: 8080
+    timeout: 3600s  # 1 hour for long-lived WebSocket connections
+    corsPolicy:
+      allowOrigins:
+      - prefix: "*"
+      allowMethods:
+      - GET
+      - POST
+      - OPTIONS
+      allowHeaders:
+      - "*"
+      - upgrade
+      - connection
+      - sec-websocket-key
+      - sec-websocket-version
+      - sec-websocket-protocol
+      exposeHeaders:
+      - "*"
+      allowCredentials: true
+      maxAge: 86400s
+
+  # Health check routes
+  - match:
+    - uri:
+        exact: /openclaw/health
+    route:
+    - destination:
+        host: nexus-openclaw.nexus.svc.cluster.local
+        port:
+          number: 8080
+    timeout: 5s
+
+  - match:
+    - uri:
+        exact: /openclaw/ready
+    route:
+    - destination:
+        host: nexus-openclaw.nexus.svc.cluster.local
+        port:
+          number: 8080
+    timeout: 5s
+
+  - match:
+    - uri:
+        exact: /openclaw/live
+    route:
+    - destination:
+        host: nexus-openclaw.nexus.svc.cluster.local
+        port:
+          number: 8080
+    timeout: 5s
+
+  # Metrics route (Prometheus scraping)
+  - match:
+    - uri:
+        exact: /openclaw/metrics
+    route:
+    - destination:
+        host: nexus-openclaw.nexus.svc.cluster.local
+        port:
+          number: 8080
+    timeout: 10s
+
+  # UI route - Static assets and Next.js pages
+  - match:
+    - uri:
+        prefix: /openclaw/ui
+    route:
+    - destination:
+        host: nexus-openclaw.nexus.svc.cluster.local
+        port:
+          number: 8080
+    timeout: 30s
+    retries:
+      attempts: 3
+      perTryTimeout: 10s
+      retryOn: 5xx,reset,connect-failure,refused-stream
+    corsPolicy:
+      allowOrigins:
+      - prefix: "*"
+      allowMethods:
+      - GET
+      - POST
+      - PUT
+      - DELETE
+      - OPTIONS
+      allowHeaders:
+      - "*"
+      - content-type
+      - authorization
+      - x-requested-with
+      exposeHeaders:
+      - "*"
+      allowCredentials: true
+      maxAge: 86400s
+
+  # API routes - RESTful endpoints
+  - match:
+    - uri:
+        prefix: /openclaw/api/v1
+    route:
+    - destination:
+        host: nexus-openclaw.nexus.svc.cluster.local
+        port:
+          number: 8080
+    timeout: 300s  # 5 minutes for complex skill executions
+    retries:
+      attempts: 3
+      perTryTimeout: 100s
+      retryOn: 5xx,reset,connect-failure,refused-stream
+    corsPolicy:
+      allowOrigins:
+      - prefix: "*"
+      allowMethods:
+      - GET
+      - POST
+      - PUT
+      - DELETE
+      - PATCH
+      - OPTIONS
+      allowHeaders:
+      - "*"
+      - content-type
+      - authorization
+      - x-requested-with
+      - x-api-key
+      exposeHeaders:
+      - "*"
+      - x-rate-limit-limit
+      - x-rate-limit-remaining
+      - x-rate-limit-reset
+      allowCredentials: true
+      maxAge: 86400s
+
+  # OpenAPI documentation route
+  - match:
+    - uri:
+        prefix: /openclaw/api/docs
+    route:
+    - destination:
+        host: nexus-openclaw.nexus.svc.cluster.local
+        port:
+          number: 8080
+    timeout: 10s
+
+  # Catch-all route for /openclaw/* (internal mesh traffic)
+  - match:
+    - uri:
+        prefix: /openclaw/
+    route:
+    - destination:
+        host: nexus-openclaw.nexus.svc.cluster.local
+        port:
+          number: 8080
+    timeout: 300s
+    corsPolicy:
+      allowOrigins:
+      - prefix: "*"
+      allowMethods:
+      - GET
+      - POST
+      - PUT
+      - DELETE
+      - PATCH
+      - OPTIONS
+      allowHeaders:
+      - "*"
+      exposeHeaders:
+      - "*"
+      allowCredentials: true
+      maxAge: 86400s
+
+  # Default route (internal mesh traffic without /openclaw prefix)
+  - route:
+    - destination:
+        host: nexus-openclaw.nexus.svc.cluster.local
+        port:
+          number: 8080
+    timeout: 300s

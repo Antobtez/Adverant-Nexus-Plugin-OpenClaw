@@ -1,0 +1,257 @@
+/**
+ * HTTP Request Logging Middleware
+ *
+ * Provides:
+ * - Log all requests with timing
+ * - Exclude sensitive data (passwords, tokens)
+ * - Include request ID for tracing
+ * - Performance tracking
+ */
+
+import { Request, Response, NextFunction } from 'express';
+import { v4 as uuidv4 } from 'uuid';
+import { createLogger } from '../utils/logger';
+import { httpRequestDuration, httpRequestTotal } from '../utils/metrics';
+
+const logger = createLogger({ component: 'request-logger' });
+
+// Sensitive field patterns to exclude from logging
+const SENSITIVE_PATTERNS = [
+  /password/i,
+  /token/i,
+  /secret/i,
+  /authorization/i,
+  /api[-_]?key/i,
+  /credit[-_]?card/i,
+  /ssn/i,
+  /bearer/i,
+];
+
+/**
+ * Sanitize object to remove sensitive fields
+ */
+function sanitize(obj: any): any {
+  if (!obj || typeof obj !== 'object') {
+    return obj;
+  }
+
+  if (Array.isArray(obj)) {
+    return obj.map(sanitize);
+  }
+
+  const sanitized: any = {};
+  for (const [key, value] of Object.entries(obj)) {
+    // Check if field name matches sensitive pattern
+    const isSensitive = SENSITIVE_PATTERNS.some((pattern) => pattern.test(key));
+
+    if (isSensitive) {
+      sanitized[key] = '[REDACTED]';
+    } else if (value && typeof value === 'object') {
+      sanitized[key] = sanitize(value);
+    } else {
+      sanitized[key] = value;
+    }
+  }
+
+  return sanitized;
+}
+
+/**
+ * Get client IP address
+ */
+function getClientIp(req: Request): string {
+  return (
+    (req.headers['x-forwarded-for'] as string)?.split(',')[0].trim() ||
+    (req.headers['x-real-ip'] as string) ||
+    req.socket.remoteAddress ||
+    'unknown'
+  );
+}
+
+/**
+ * Request logging middleware
+ */
+export function requestLogger(req: Request, res: Response, next: NextFunction): void {
+  // Generate request ID
+  const requestId = uuidv4();
+  (req as any).requestId = requestId;
+
+  // Start timer
+  const startTime = Date.now();
+
+  // Extract request details
+  const method = req.method;
+  const url = req.url;
+  const userAgent = req.headers['user-agent'] || 'unknown';
+  const clientIp = getClientIp(req);
+
+  // Create logger with request context
+  const requestLogger = logger.child({
+    requestId,
+    method,
+    url,
+    clientIp,
+  });
+
+  // Log incoming request
+  requestLogger.info('Incoming request', {
+    userAgent,
+    query: sanitize(req.query),
+    body: sanitize(req.body),
+  });
+
+  // Capture response
+  const originalSend = res.send;
+  let responseBody: any;
+
+  res.send = function (body: any): Response {
+    responseBody = body;
+    return originalSend.call(this, body);
+  };
+
+  // Listen for response finish
+  res.on('finish', () => {
+    const duration = Date.now() - startTime;
+    const statusCode = res.statusCode;
+    const route = req.route?.path || req.path;
+
+    // Log response
+    const logLevel = statusCode >= 500 ? 'error' : statusCode >= 400 ? 'warn' : 'info';
+    requestLogger.log(logLevel, 'Request completed', {
+      statusCode,
+      duration,
+      responseSize: res.get('content-length') || 0,
+    });
+
+    // Record metrics
+    httpRequestTotal.inc({
+      method,
+      route,
+      status_code: statusCode.toString(),
+    });
+
+    httpRequestDuration.observe(
+      {
+        method,
+        route,
+        status_code: statusCode.toString(),
+      },
+      duration / 1000
+    );
+  });
+
+  // Listen for response error
+  res.on('error', (error) => {
+    const duration = Date.now() - startTime;
+    requestLogger.error('Request error', {
+      error,
+      duration,
+    });
+  });
+
+  next();
+}
+
+/**
+ * Enhanced request logger with additional context
+ */
+export function enhancedRequestLogger(options?: {
+  logBody?: boolean;
+  logHeaders?: boolean;
+  logResponse?: boolean;
+}) {
+  const {
+    logBody = true,
+    logHeaders = false,
+    logResponse = false,
+  } = options || {};
+
+  return (req: Request, res: Response, next: NextFunction): void => {
+    // Generate request ID if not already set
+    if (!(req as any).requestId) {
+      (req as any).requestId = uuidv4();
+    }
+
+    const requestId = (req as any).requestId;
+    const startTime = Date.now();
+
+    // Extract request details
+    const method = req.method;
+    const url = req.url;
+    const clientIp = getClientIp(req);
+
+    // Create logger with request context
+    const requestLogger = logger.child({
+      requestId,
+      method,
+      url,
+      clientIp,
+    });
+
+    // Build log context
+    const logContext: any = {};
+
+    if (logBody && req.body) {
+      logContext.body = sanitize(req.body);
+    }
+
+    if (logHeaders) {
+      logContext.headers = sanitize(req.headers);
+    }
+
+    logContext.query = sanitize(req.query);
+
+    // Log incoming request
+    requestLogger.info('Incoming request', logContext);
+
+    // Capture response if needed
+    if (logResponse) {
+      const originalJson = res.json;
+      res.json = function (body: any): Response {
+        (res as any).responseBody = body;
+        return originalJson.call(this, body);
+      };
+    }
+
+    // Listen for response finish
+    res.on('finish', () => {
+      const duration = Date.now() - startTime;
+      const statusCode = res.statusCode;
+
+      const responseContext: any = {
+        statusCode,
+        duration,
+        responseSize: res.get('content-length') || 0,
+      };
+
+      if (logResponse && (res as any).responseBody) {
+        responseContext.body = sanitize((res as any).responseBody);
+      }
+
+      // Log response
+      const logLevel = statusCode >= 500 ? 'error' : statusCode >= 400 ? 'warn' : 'info';
+      requestLogger.log(logLevel, 'Request completed', responseContext);
+
+      // Record metrics
+      const route = req.route?.path || req.path;
+      httpRequestTotal.inc({
+        method,
+        route,
+        status_code: statusCode.toString(),
+      });
+
+      httpRequestDuration.observe(
+        {
+          method,
+          route,
+          status_code: statusCode.toString(),
+        },
+        duration / 1000
+      );
+    });
+
+    next();
+  };
+}
+
+export default requestLogger;
