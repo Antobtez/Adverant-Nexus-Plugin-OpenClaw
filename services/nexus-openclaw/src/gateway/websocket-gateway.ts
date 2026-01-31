@@ -161,10 +161,10 @@ export class OpenClawGateway {
     });
 
     // Join organization room for multi-tenancy
-    socket.join(\`org:\${data.organizationId}\`);
+    socket.join(`org:${data.organizationId}`);
 
     // Join user-specific room
-    socket.join(\`user:\${data.userId}\`);
+    socket.join(`user:${data.userId}`);
 
     // Send connection confirmation
     socket.emit('connected', {
@@ -214,7 +214,7 @@ export class OpenClawGateway {
       };
 
       // Join session room
-      socket.join(\`session:\${sessionId}\`);
+      socket.join(`session:${sessionId}`);
       socket.data.sessionId = sessionId;
 
       // Emit session created event
@@ -241,7 +241,7 @@ export class OpenClawGateway {
    * Handle session join
    */
   private handleSessionJoin(socket: Socket, sessionId: string): void {
-    socket.join(\`session:\${sessionId}\`);
+    socket.join(`session:${sessionId}`);
     socket.data.sessionId = sessionId;
     socket.emit('session.joined', { sessionId });
   }
@@ -250,7 +250,7 @@ export class OpenClawGateway {
    * Handle session leave
    */
   private handleSessionLeave(socket: Socket, sessionId: string): void {
-    socket.leave(\`session:\${sessionId}\`);
+    socket.leave(`session:${sessionId}`);
     if (socket.data.sessionId === sessionId) {
       socket.data.sessionId = undefined;
     }
@@ -300,7 +300,7 @@ export class OpenClawGateway {
    */
   private async handleSkillExecute(socket: Socket, payload: SkillExecutionPayload): Promise<void> {
     const data = socket.data as SocketData;
-    const executionId = \`exec_\${Date.now()}_\${uuidv4().slice(0, 8)}\`;
+    const executionId = `exec_${Date.now()}_${uuidv4().slice(0, 8)}`;
 
     try {
       // Emit skill started event
@@ -337,7 +337,7 @@ export class OpenClawGateway {
         skillName: payload.skillName,
         output: {
           success: true,
-          message: \`Skill \${payload.skillName} executed successfully\`,
+          message: `Skill ${payload.skillName} executed successfully`,
           data: payload.params,
         },
         executionTimeMs: 1000,
@@ -349,7 +349,7 @@ export class OpenClawGateway {
         id: uuidv4(),
         sessionId: payload.sessionId,
         role: 'assistant',
-        content: \`Executed skill: \${payload.skillName}\`,
+        content: `Executed skill: ${payload.skillName}`,
         skillExecution: {
           executionId,
           skillName: payload.skillName,
@@ -406,7 +406,7 @@ export class OpenClawGateway {
    */
   broadcastToOrg(organizationId: string, event: string, data: unknown): void {
     if (this.io) {
-      this.io.to(\`org:\${organizationId}\`).emit(event, data);
+      this.io.to(`org:${organizationId}`).emit(event, data);
     }
   }
 
@@ -415,7 +415,7 @@ export class OpenClawGateway {
    */
   broadcastToSession(sessionId: string, event: string, data: unknown): void {
     if (this.io) {
-      this.io.to(\`session:\${sessionId}\`).emit(event, data);
+      this.io.to(`session:${sessionId}`).emit(event, data);
     }
   }
 
@@ -424,7 +424,7 @@ export class OpenClawGateway {
    */
   broadcastToUser(userId: string, event: string, data: unknown): void {
     if (this.io) {
-      this.io.to(\`user:\${userId}\`).emit(event, data);
+      this.io.to(`user:${userId}`).emit(event, data);
     }
   }
 
