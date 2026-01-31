@@ -158,8 +158,8 @@ EXPOSE 8080
 # Use dumb-init to handle signals properly
 ENTRYPOINT ["/usr/bin/dumb-init", "--"]
 
-# Start the application (full backend with WebSocket gateway)
-CMD ["node", "dist/index.js"]
+# Start the application (simple backend - full backend requires fixing TS errors)
+CMD ["node", "dist/index-simple.js"]
 
 # ============================================================================
 # Build Instructions (ALWAYS build on remote server):
