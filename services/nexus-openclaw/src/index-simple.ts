@@ -194,98 +194,21 @@ apiRouter.get('/analytics/skills', (req: Request, res: Response) => {
 app.use('/openclaw/api/v1', apiRouter);
 app.use('/api/v1', apiRouter);
 
-// Serve UI (placeholder HTML for now)
-app.get('/openclaw/ui', (req: Request, res: Response) => {
-  res.send(`
-<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>OpenClaw Assistant</title>
-  <script src="https://cdn.tailwindcss.com"></script>
-</head>
-<body class="bg-gray-100 min-h-screen">
-  <div class="container mx-auto px-4 py-8">
-    <header class="bg-white rounded-lg shadow-md p-6 mb-8">
-      <div class="flex items-center gap-4">
-        <div class="w-12 h-12 bg-blue-600 rounded-lg flex items-center justify-center text-white text-xl font-bold">OC</div>
-        <div>
-          <h1 class="text-2xl font-bold text-gray-800">OpenClaw Assistant</h1>
-          <p class="text-sm text-gray-500">Multi-channel AI automation powered by Nexus</p>
-        </div>
-        <span class="ml-auto px-3 py-1 bg-green-100 text-green-800 rounded-full text-sm font-medium">Connected</span>
-      </div>
-    </header>
+// Serve Next.js static export from ui/out directory
+const uiPath = process.env.UI_BUILD_PATH || path.join(__dirname, '..', 'ui', 'out');
+console.log(`[OpenClaw] UI path: ${uiPath}`);
 
-    <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-      <div class="bg-white rounded-lg shadow-md p-6">
-        <h3 class="text-lg font-semibold text-gray-700 mb-2">Sessions</h3>
-        <p class="text-3xl font-bold text-blue-600">42</p>
-        <p class="text-sm text-gray-500">5 active</p>
-      </div>
-      <div class="bg-white rounded-lg shadow-md p-6">
-        <h3 class="text-lg font-semibold text-gray-700 mb-2">Skills Executed</h3>
-        <p class="text-3xl font-bold text-green-600">1,287</p>
-        <p class="text-sm text-gray-500">98% success rate</p>
-      </div>
-      <div class="bg-white rounded-lg shadow-md p-6">
-        <h3 class="text-lg font-semibold text-gray-700 mb-2">Messages</h3>
-        <p class="text-3xl font-bold text-purple-600">3,456</p>
-        <p class="text-sm text-gray-500">234ms avg response</p>
-      </div>
-    </div>
+// Serve static files for /openclaw/ui/*
+app.use('/openclaw/ui', express.static(uiPath, {
+  index: 'index.html',
+  extensions: ['html'],
+  maxAge: '1d',
+  etag: true,
+}));
 
-    <div class="bg-white rounded-lg shadow-md p-6 mb-8">
-      <h2 class="text-xl font-bold text-gray-800 mb-4">Available Skills (${SKILLS.length}+)</h2>
-      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-        ${SKILLS.map(skill => `
-          <div class="border rounded-lg p-4 hover:bg-gray-50 cursor-pointer">
-            <h3 class="font-semibold text-gray-800">${skill.name}</h3>
-            <p class="text-sm text-gray-500">${skill.description}</p>
-            <span class="inline-block mt-2 px-2 py-1 bg-gray-100 text-gray-600 rounded text-xs">${skill.category}</span>
-          </div>
-        `).join('')}
-      </div>
-    </div>
-
-    <div class="bg-white rounded-lg shadow-md p-6">
-      <h2 class="text-xl font-bold text-gray-800 mb-4">Supported Channels</h2>
-      <div class="flex flex-wrap gap-4">
-        <div class="flex items-center gap-2 px-4 py-2 bg-green-50 rounded-lg border border-green-200">
-          <span class="w-3 h-3 bg-green-500 rounded-full"></span>
-          <span class="font-medium">WhatsApp</span>
-        </div>
-        <div class="flex items-center gap-2 px-4 py-2 bg-blue-50 rounded-lg border border-blue-200">
-          <span class="w-3 h-3 bg-blue-500 rounded-full"></span>
-          <span class="font-medium">Telegram</span>
-        </div>
-        <div class="flex items-center gap-2 px-4 py-2 bg-indigo-50 rounded-lg border border-indigo-200">
-          <span class="w-3 h-3 bg-indigo-500 rounded-full"></span>
-          <span class="font-medium">Discord</span>
-        </div>
-        <div class="flex items-center gap-2 px-4 py-2 bg-purple-50 rounded-lg border border-purple-200">
-          <span class="w-3 h-3 bg-purple-500 rounded-full"></span>
-          <span class="font-medium">Slack</span>
-        </div>
-        <div class="flex items-center gap-2 px-4 py-2 bg-gray-50 rounded-lg border border-gray-200">
-          <span class="w-3 h-3 bg-gray-500 rounded-full"></span>
-          <span class="font-medium">Web</span>
-        </div>
-      </div>
-    </div>
-
-    <footer class="mt-8 text-center text-sm text-gray-500">
-      <p>OpenClaw v1.0.0 | Nexus Plugin</p>
-      <p class="mt-1">
-        <a href="https://docs.adverant.ai/plugins/openclaw" class="text-blue-600 hover:underline">Documentation</a> |
-        <a href="https://github.com/adverant/Adverant-Nexus-Plugin-OpenClaw" class="text-blue-600 hover:underline">GitHub</a>
-      </p>
-    </footer>
-  </div>
-</body>
-</html>
-  `);
+// Handle SPA routing - serve index.html for unmatched routes under /openclaw/ui
+app.get('/openclaw/ui/*', (req: Request, res: Response) => {
+  res.sendFile(path.join(uiPath, 'index.html'));
 });
 
 // Redirect /ui to /openclaw/ui
