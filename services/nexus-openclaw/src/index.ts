@@ -330,7 +330,6 @@ class OpenClawServer {
     this.app.get('/openclaw/live', liveHandler);
     this.app.get('/metrics', metricsHandler);
     this.app.get('/openclaw/metrics', metricsHandler);
-    });
 
     // Authenticated API routes - use requireAuth middleware with auth client
     const authMiddleware = requireAuth(this.authClient);
