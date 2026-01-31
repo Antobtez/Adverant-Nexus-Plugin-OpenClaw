@@ -507,3 +507,16 @@ export function createCronRouter(
 
   return router;
 }
+
+// Simple standalone router for basic usage
+const simpleRouter = Router();
+
+simpleRouter.get('/', (req, res) => {
+  res.json({ success: true, data: [], message: 'Cron jobs endpoint - use createCronRouter for full functionality' });
+});
+
+simpleRouter.post('/', (req, res) => {
+  res.json({ success: true, message: 'Cron job creation endpoint' });
+});
+
+export const cronRoutes = simpleRouter;

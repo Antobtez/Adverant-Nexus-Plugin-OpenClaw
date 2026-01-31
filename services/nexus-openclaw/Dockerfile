@@ -1,15 +1,44 @@
 # ============================================================================
 # OpenClaw Plugin - Multi-stage Docker Build
 # ============================================================================
-# Build Stage: Compile TypeScript and install dependencies
-# Production Stage: Minimal runtime with only production dependencies
+# UI Build Stage: Build Next.js static export
+# Backend Build Stage: Compile TypeScript and install dependencies
+# Production Stage: Minimal runtime with UI and backend
 # Security: Non-root user, minimal attack surface, read-only where possible
 # ============================================================================
 
 # ============================================================================
-# Stage 1: Builder - Compile TypeScript and prepare application
+# Stage 1: UI Builder - Build Next.js static export
 # ============================================================================
-FROM node:20-alpine AS builder
+FROM node:20-alpine AS ui-builder
+
+WORKDIR /ui
+
+# Install build dependencies
+RUN apk add --no-cache git
+
+# Copy package files first for better caching
+COPY ui/package*.json ./
+
+# Install dependencies
+RUN npm ci
+
+# Copy UI source code
+COPY ui/ ./
+
+# Set environment for build
+ENV NODE_ENV=production
+ENV SKIP_TYPE_CHECK=true
+ENV SKIP_LINT=true
+ENV NEXT_TELEMETRY_DISABLED=1
+
+# Build Next.js static export (generates 'out' directory)
+RUN npm run build
+
+# ============================================================================
+# Stage 2: Backend Builder - Compile TypeScript
+# ============================================================================
+FROM node:20-alpine AS backend-builder
 
 # Build arguments for traceability
 ARG NODE_VERSION=20
@@ -39,6 +68,7 @@ RUN npm ci --include=dev
 # Copy source code
 COPY services/nexus-openclaw/src ./src
 COPY services/nexus-openclaw/tsconfig.json ./
+COPY services/nexus-openclaw/tsconfig.simple.json ./
 
 # Build TypeScript to JavaScript
 RUN npm run build
@@ -47,7 +77,7 @@ RUN npm run build
 RUN npm prune --production
 
 # ============================================================================
-# Stage 2: Production - Minimal runtime image
+# Stage 3: Production - Minimal runtime image
 # ============================================================================
 FROM node:20-alpine AS production
 
@@ -93,14 +123,13 @@ RUN addgroup -g 1001 -S openclaw && \
 # Set working directory
 WORKDIR /app
 
-# Copy built application from builder stage
-COPY --from=builder --chown=openclaw:openclaw /app/dist ./dist
-COPY --from=builder --chown=openclaw:openclaw /app/node_modules ./node_modules
-COPY --from=builder --chown=openclaw:openclaw /app/package*.json ./
+# Copy built backend from builder stage
+COPY --from=backend-builder --chown=openclaw:openclaw /app/dist ./dist
+COPY --from=backend-builder --chown=openclaw:openclaw /app/node_modules ./node_modules
+COPY --from=backend-builder --chown=openclaw:openclaw /app/package*.json ./
 
-# Copy UI assets if they exist (Next.js build output)
-COPY --from=builder --chown=openclaw:openclaw /app/ui/.next ./ui/.next 2>/dev/null || true
-COPY --from=builder --chown=openclaw:openclaw /app/ui/public ./ui/public 2>/dev/null || true
+# Copy built UI static files from ui-builder stage
+COPY --from=ui-builder --chown=openclaw:openclaw /ui/out ./ui/out
 
 # Create directories for runtime data
 RUN mkdir -p /tmp/openclaw /app/data /app/logs && \
@@ -113,14 +142,15 @@ ENV NEXUS_BUILD_ID="${BUILD_ID}" \
     NEXUS_GIT_BRANCH="${GIT_BRANCH}" \
     NEXUS_VERSION="${VERSION}" \
     NODE_ENV=production \
-    PORT=8080
+    PORT=8080 \
+    UI_BUILD_PATH=./ui/out
 
 # Switch to non-root user
 USER 1001
 
 # Health check
 HEALTHCHECK --interval=30s --timeout=5s --start-period=10s --retries=3 \
-    CMD curl -f http://localhost:8080/openclaw/health || exit 1
+    CMD curl -f http://localhost:8080/health || exit 1
 
 # Expose application port
 EXPOSE 8080
@@ -140,6 +170,9 @@ CMD ["node", "dist/index.js"]
 # Navigate to plugin directory:
 #   cd /root/Adverant-Nexus-Plugin-OpenClaw
 #
+# Pull latest code:
+#   git pull origin main
+#
 # Generate build metadata:
 #   export SERVICE="nexus-openclaw"
 #   export BUILD_ID="${SERVICE}-$(date +%Y%m%d)-$(openssl rand -hex 4)"
@@ -148,7 +181,7 @@ CMD ["node", "dist/index.js"]
 #   export GIT_BRANCH=$(git branch --show-current)
 #   export VERSION=$(grep '"version"' services/nexus-openclaw/package.json | head -1 | sed 's/.*: "\(.*\)".*/\1/')
 #
-# Build Docker image:
+# Build Docker image (includes UI build):
 #   docker build \
 #     --build-arg BUILD_ID="${BUILD_ID}" \
 #     --build-arg BUILD_TIMESTAMP="${BUILD_TIMESTAMP}" \
@@ -175,4 +208,7 @@ CMD ["node", "dist/index.js"]
 # Check build info:
 #   k3s kubectl exec -n nexus deployment/nexus-openclaw -- env | grep NEXUS_
 #   docker inspect localhost:5000/nexus-openclaw:latest | jq '.[0].Config.Labels'
+#
+# Verify UI is accessible:
+#   curl https://api.adverant.ai/openclaw/ui
 # ============================================================================

@@ -1,0 +1,53 @@
+apiVersion: networking.istio.io/v1beta1
+kind: VirtualService
+metadata:
+  name: nexus-openclaw
+  namespace: nexus
+spec:
+  hosts:
+    - api.adverant.ai
+  gateways:
+    - nexus-gateway
+  http:
+    # OpenClaw UI
+    - match:
+        - uri:
+            prefix: /openclaw/ui
+      route:
+        - destination:
+            host: nexus-openclaw.nexus.svc.cluster.local
+            port:
+              number: 8080
+      timeout: 30s
+
+    # OpenClaw API
+    - match:
+        - uri:
+            prefix: /openclaw/api
+      route:
+        - destination:
+            host: nexus-openclaw.nexus.svc.cluster.local
+            port:
+              number: 8080
+      timeout: 60s
+
+    # OpenClaw Health endpoints
+    - match:
+        - uri:
+            prefix: /openclaw/health
+      route:
+        - destination:
+            host: nexus-openclaw.nexus.svc.cluster.local
+            port:
+              number: 8080
+      timeout: 10s
+
+    - match:
+        - uri:
+            prefix: /openclaw/metrics
+      route:
+        - destination:
+            host: nexus-openclaw.nexus.svc.cluster.local
+            port:
+              number: 8080
+      timeout: 10s

@@ -20,12 +20,14 @@ import { useEffect, useState } from 'react';
 import { MessageSquare, Zap, Radio, Clock, BarChart3, Settings } from 'lucide-react';
 
 // Core components
-import { ChatInterface } from '@/components/ChatInterface';
-import { SkillBrowser } from '@/components/SkillBrowser';
-import { ChannelManager } from '@/components/ChannelManager';
-import { CronEditor } from '@/components/CronEditor';
-import { AnalyticsDashboard } from '@/components/AnalyticsDashboard';
-import { SettingsPanel } from '@/components/SettingsPanel';
+import {
+  ChatInterface,
+  SkillBrowser,
+  ChannelManager,
+  CronEditor,
+  AnalyticsDashboard,
+  SettingsPanel
+} from '@/components';
 
 // UI components
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';

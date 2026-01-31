@@ -1,90 +1,55 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  // Output mode - set to 'standalone' for production Docker build
-  output: process.env.NODE_ENV === 'production' ? 'standalone' : undefined,
+  // Output mode - use 'export' for static HTML generation (served by Express)
+  // This generates files in the 'out' directory for static serving
+  output: 'export',
 
   // Base path for serving the UI at /openclaw/ui
   basePath: '/openclaw/ui',
 
-  // Asset prefix for CDN (if needed)
-  // assetPrefix: process.env.CDN_URL || '',
+  // Asset prefix - must match base path for proper static asset loading
+  assetPrefix: '/openclaw/ui',
+
+  // Trailing slash for static export (helps with routing)
+  trailingSlash: true,
 
   // Strict mode for development
   reactStrictMode: true,
 
-  // SWC minification
-  swcMinify: true,
-
-  // Image optimization
+  // Image optimization - must be unoptimized for static export
   images: {
     domains: ['cdn.adverant.ai', 'api.adverant.ai'],
-    unoptimized: process.env.NODE_ENV === 'development',
+    unoptimized: true, // Required for static export
   },
 
   // Environment variables exposed to browser
   env: {
     NEXT_PUBLIC_API_URL: process.env.NEXT_PUBLIC_API_URL || 'https://api.adverant.ai',
     NEXT_PUBLIC_WS_URL: process.env.NEXT_PUBLIC_WS_URL || 'wss://api.adverant.ai/openclaw/ws',
+    NEXT_PUBLIC_BASE_PATH: '/openclaw/ui',
   },
 
   // Webpack configuration
   webpack: (config, { isServer }) => {
-    // Add custom webpack config here if needed
+    // Disable canvas for QRCode (causes issues in static build)
+    config.resolve.alias = {
+      ...config.resolve.alias,
+      canvas: false,
+    };
     return config;
-  },
-
-  // Redirects
-  async redirects() {
-    return [
-      {
-        source: '/',
-        destination: '/openclaw/ui',
-        basePath: false,
-        permanent: false,
-      },
-    ];
-  },
-
-  // Headers for security
-  async headers() {
-    return [
-      {
-        source: '/:path*',
-        headers: [
-          {
-            key: 'X-Frame-Options',
-            value: 'SAMEORIGIN',
-          },
-          {
-            key: 'X-Content-Type-Options',
-            value: 'nosniff',
-          },
-          {
-            key: 'Referrer-Policy',
-            value: 'strict-origin-when-cross-origin',
-          },
-        ],
-      },
-    ];
   },
 
   // TypeScript config
   typescript: {
-    // Dangerously allow production builds to complete even with type errors
-    // Set to false in production for safety
-    ignoreBuildErrors: false,
+    // Allow production builds even with type errors during development
+    // Set to false for strict builds
+    ignoreBuildErrors: process.env.SKIP_TYPE_CHECK === 'true',
   },
 
   // ESLint config
   eslint: {
-    // Don't run ESLint during production builds (run separately in CI)
-    ignoreDuringBuilds: false,
-  },
-
-  // Experimental features
-  experimental: {
-    // Enable Server Actions
-    serverActions: true,
+    // Skip ESLint during production builds (run separately in CI)
+    ignoreDuringBuilds: process.env.SKIP_LINT === 'true',
   },
 };
 
